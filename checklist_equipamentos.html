@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist de Equipamentos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+:root{
+  --green:#2d7a2d;--green2:#4aaa2a;--green3:#e8f5e0;--green4:#1a5a1a;
+  --orange:#f5a623;--orange2:#e8921a;--orange3:#fff8ed;
+  --red:#dc2626;--red2:#fee2e2;--red3:#991b1b;
+  --bg:#f4f7f4;--surface:#fff;--border:#d4e8d4;--border2:#e8f0e8;
+  --text:#1a2e1a;--text2:#4a6a4a;--text3:#8aaa8a;
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 1px 3px rgba(45,122,45,.08),0 1px 2px rgba(45,122,45,.05);
+  --shadow-md:0 4px 12px rgba(45,122,45,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.app{display:flex;height:100vh;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:230px;background:var(--green4);display:flex;flex-direction:column;flex-shrink:0;}
+.logo-area{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.1);}
+.logo-circle{width:44px;height:44px;background:var(--orange);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:8px;}
+.logo-title{font-size:14px;font-weight:700;color:#fff;line-height:1.2;}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px;}
+.nav{padding:12px 10px;flex:1;overflow-y:auto;}
+.nav-sec{font-size:10px;font-weight:600;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.8px;padding:4px 10px 8px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.65);transition:all .15s;margin-bottom:2px;}
+.nav-item:hover{background:rgba(255,255,255,.1);color:#fff;}
+.nav-item.active{background:var(--orange);color:#fff;}
+.nav-ico{font-size:15px;width:18px;text-align:center;flex-shrink:0;}
+.sdiv{height:1px;background:rgba(255,255,255,.1);margin:7px 12px;}
+.sidebar-bottom{padding:12px 10px;border-top:1px solid rgba(255,255,255,.1);}
+.sync-btn{width:100%;padding:8px 12px;background:var(--green2);color:#fff;border:none;border-radius:var(--radius-sm);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px;}
+.sync-btn:hover{background:#3a9a1a;}
+.reset-btn{width:100%;padding:7px;background:rgba(220,38,38,.2);color:#fca5a5;border:1px solid rgba(220,38,38,.3);border-radius:var(--radius-sm);font-size:11px;cursor:pointer;}
+.reset-btn:hover{background:rgba(220,38,38,.35);}
+.sync-status{font-size:10px;color:rgba(255,255,255,.35);text-align:center;margin-top:5px;}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:10;}
+.tb-left{display:flex;align-items:center;gap:10px;}
+.hamburger{display:none;background:none;border:none;cursor:pointer;font-size:20px;color:var(--text2);padding:4px;}
+.tb-title{font-size:15px;font-weight:700;}
+.tb-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+.tb-right{display:flex;align-items:center;gap:8px;}
+.content{padding:18px 22px;flex:1;}
+
+/* PAGES */
+.page{display:none;}.page.active{display:block;}
+
+/* CAPA */
+.capa-bg{min-height:calc(100vh - 57px);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e8f5e0 0%,#fff8ed 100%);}
+.capa-card{background:var(--surface);border-radius:20px;padding:40px;max-width:500px;width:100%;text-align:center;box-shadow:var(--shadow-md);border:1px solid var(--border);}
+.capa-icon{width:84px;height:84px;background:linear-gradient(135deg,var(--green),var(--green2));border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 20px;}
+.capa-h1{font-size:26px;font-weight:700;margin-bottom:6px;}
+.capa-h2{font-size:13px;color:var(--text3);margin-bottom:26px;line-height:1.5;}
+.capa-equip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:24px;}
+.ce{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 6px;text-align:center;}
+.ce-ico{font-size:22px;margin-bottom:4px;}
+.ce-lbl{font-size:10px;font-weight:600;color:var(--text2);}
+.ce-count{font-size:16px;font-weight:700;color:var(--green);margin-top:2px;}
+.capa-btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;}
+.capa-btn:hover{background:var(--green4);}
+.capa-btn2{width:100%;padding:11px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);}
+.kpi-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
+.kpi-value{font-size:22px;font-weight:700;}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.kpi-card.green .kpi-value{color:var(--green);}
+.kpi-card.orange .kpi-value{color:var(--orange2);}
+.kpi-card.red .kpi-value{color:var(--red);}
+.kpi-card.blue .kpi-value{color:#2563eb;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:14px;}
+.card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+
+/* EQUIPAMENTO CARD */
+.equip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:14px;}
+.equip-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);cursor:pointer;transition:all .2s;}
+.equip-card:hover{box-shadow:var(--shadow-md);border-color:var(--green2);}
+.equip-card.proprio{border-top:3px solid var(--green2);}
+.equip-card.alugado{border-top:3px solid var(--orange);}
+.equip-card.inoperante{border-top:3px solid var(--red);opacity:.8;}
+.eq-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.eq-ico{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.eq-ico.glp{background:#e8f5e0;}
+.eq-ico.eletrica{background:#dbeafe;}
+.eq-ico.retratil{background:#f3e8ff;}
+.eq-ico.paleteira-e{background:#fef3c7;}
+.eq-ico.paleteira-m{background:#fee2e2;}
+.eq-name{font-size:13px;font-weight:700;color:var(--text);}
+.eq-pat{font-size:11px;color:var(--text3);margin-top:1px;}
+.eq-body{display:flex;flex-direction:column;gap:5px;}
+.eq-row{display:flex;justify-content:space-between;font-size:11px;}
+.eq-label{color:var(--text3);}
+.eq-val{font-weight:500;color:var(--text);}
+.eq-footer{margin-top:10px;padding-top:8px;border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;}
+.eq-status{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;}
+.es-operacional{background:var(--green3);color:var(--green4);}
+.es-manutencao{background:var(--orange3);color:#92400e;}
+.es-inoperante{background:var(--red2);color:var(--red3);}
+.eq-type-badge{padding:2px 8px;border-radius:10px;font-size:9px;font-weight:600;}
+.etb-proprio{background:#dcfce7;color:#166534;}
+.etb-alugado{background:#fef3c7;color:#92400e;}
+
+/* CHECKLIST FORM */
+.chk-header{background:linear-gradient(135deg,var(--green4),var(--green));color:#fff;border-radius:var(--radius);padding:18px;margin-bottom:16px;}
+.chk-h-title{font-size:16px;font-weight:700;margin-bottom:4px;}
+.chk-h-sub{font-size:12px;opacity:.75;}
+.chk-h-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:14px;}
+.chk-info-item{background:rgba(255,255,255,.15);border-radius:8px;padding:8px 12px;}
+.chk-info-label{font-size:9px;opacity:.7;text-transform:uppercase;letter-spacing:.4px;}
+.chk-info-val{font-size:12px;font-weight:600;margin-top:2px;}
+
+.chk-section{margin-bottom:16px;}
+.chk-sec-title{font-size:12px;font-weight:700;color:var(--green4);text-transform:uppercase;letter-spacing:.5px;padding:8px 14px;background:var(--green3);border-radius:var(--radius-sm);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.chk-score{font-size:11px;background:var(--green);color:#fff;padding:2px 10px;border-radius:20px;}
+
+.chk-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);margin-bottom:6px;transition:background .15s;}
+.chk-item:hover{background:var(--bg);}
+.chk-item-nome{flex:1;font-size:12px;font-weight:500;color:var(--text);}
+.chk-btns{display:flex;gap:6px;flex-shrink:0;}
+.chk-btn{width:36px;height:32px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg);font-size:13px;cursor:pointer;transition:all .15s;font-weight:700;}
+.chk-btn:hover{transform:scale(1.05);}
+.chk-btn.ok.sel{background:#dcfce7;border-color:var(--green2);box-shadow:0 0 0 2px rgba(74,170,42,.2);}
+.chk-btn.nok.sel{background:var(--red2);border-color:var(--red);box-shadow:0 0 0 2px rgba(220,38,38,.2);}
+.chk-btn.na.sel{background:#f1f5f9;border-color:#94a3b8;box-shadow:0 0 0 2px rgba(148,163,184,.2);}
+.chk-obs{width:100%;margin-top:6px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);outline:none;resize:none;display:none;}
+.chk-obs.show{display:block;}
+
+/* SCORE GERAL */
+.score-geral{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid var(--green2);border-radius:var(--radius);padding:20px;text-align:center;margin-bottom:16px;}
+.score-geral.warning{background:linear-gradient(135deg,#fff8ed,#fef3c7);border-color:var(--orange);}
+.score-geral.danger{background:linear-gradient(135deg,#fff5f5,#fee2e2);border-color:var(--red);}
+.sg-val{font-size:48px;font-weight:700;color:var(--green);}
+.sg-val.warning{color:var(--orange2);}
+.sg-val.danger{color:var(--red);}
+.sg-label{font-size:13px;color:var(--text3);}
+.sg-status{font-size:14px;font-weight:700;margin-top:6px;}
+
+/* ASSINATURA */
+.sig-wrap{margin-top:16px;}
+.sig-label{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;}
+.sig-canvas{border:2px dashed var(--border);border-radius:var(--radius-sm);cursor:crosshair;width:100%;height:120px;background:#fafafa;touch-action:none;}
+.sig-canvas.signed{border-color:var(--green);border-style:solid;}
+.sig-actions{display:flex;gap:8px;margin-top:8px;}
+
+/* HISTÓRICO */
+.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:8px;cursor:pointer;transition:all .15s;}
+.hist-item:hover{box-shadow:var(--shadow);border-color:var(--green2);}
+.hist-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.hist-equip{font-size:13px;font-weight:700;}
+.hist-score-badge{padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;}
+.hsb-ok{background:var(--green3);color:var(--green4);}
+.hsb-warn{background:var(--orange3);color:#92400e;}
+.hsb-danger{background:var(--red2);color:var(--red3);}
+.hist-detail{font-size:11px;color:var(--text3);}
+
+/* FORMS */
+.form-group{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.form-label{font-size:12px;font-weight:600;color:var(--text2);}
+.form-input{padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);outline:none;transition:border .15s;}
+.form-input:focus{border-color:var(--green);}
+.form-select{padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);outline:none;}
+.form-select:focus{border-color:var(--green);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-sec{font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--green3);}
+
+/* BTNS */
+.btn{padding:9px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.btn-primary{background:var(--green);color:#fff;}.btn-primary:hover{background:var(--green4);}
+.btn-orange{background:var(--orange);color:#fff;}.btn-orange:hover{background:var(--orange2);}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text2);}.btn-outline:hover{background:var(--bg);}
+.btn-excel{background:#217346;color:#fff;display:flex;align-items:center;gap:5px;}
+.btn-full{width:100%;}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* FILTER */
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.filter-select{padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text2);background:var(--surface);outline:none;}
+.search-input{padding:7px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);outline:none;flex:1;min-width:180px;}
+.search-input:focus{border-color:var(--green);}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--text);color:#fff;padding:11px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.success{background:var(--green);}
+.toast.error{background:var(--red);}
+.toast.warning{background:var(--orange2);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:16px;padding:24px;max-width:540px;width:100%;max-height:92vh;overflow-y:auto;}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:4px;}
+.modal-sub{font-size:11px;color:var(--text3);margin-bottom:18px;}
+.modal-close{float:right;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text3);}
+
+/* INTEGRATION */
+.integ-banner{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid var(--orange);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:10px;}
+.integ-banner.connected{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:var(--green2);color:var(--green4);}
+
+/* EMPTY / LOADING */
+.empty{text-align:center;padding:36px;color:var(--text3);}
+.empty-ico{font-size:44px;margin-bottom:10px;}
+.empty-txt{font-size:13px;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-230px;top:0;height:100vh;z-index:100;transition:left .25s;}
+  .sidebar.open{left:0;box-shadow:4px 0 20px rgba(0,0,0,.2);}
+  .hamburger{display:block;}
+  .content{padding:12px 14px;}
+  .g2,.g3,.form-row{grid-template-columns:1fr;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .equip-grid{grid-template-columns:1fr;}
+  .topbar{padding:10px 14px;}
+  .capa-equip{grid-template-columns:1fr 1fr;}
+  .chk-h-info{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="logo-area">
+    <div class="logo-circle">🏭</div>
+    <div class="logo-title">Checklist de Equipamentos</div>
+    <div class="logo-sub">Inspeção diária — NR-11</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-sec">Principal</div>
+    <div class="nav-item active" onclick="goTo('capa',this)"><span class="nav-ico">🏠</span>Início</div>
+    <div class="nav-item" onclick="goTo('dashboard',this)"><span class="nav-ico">📊</span>Dashboard</div>
+    <div class="sdiv"></div>
+    <div class="nav-sec">Inspeção</div>
+    <div class="nav-item" onclick="goTo('novo-checklist',this)"><span class="nav-ico">✅</span>Novo Checklist</div>
+    <div class="nav-item" onclick="goTo('historico',this)"><span class="nav-ico">📋</span>Histórico</div>
+    <div class="sdiv"></div>
+    <div class="nav-sec">Cadastros</div>
+    <div class="nav-item" onclick="goTo('equipamentos',this)"><span class="nav-ico">🏭</span>Equipamentos</div>
+    <div class="nav-item" onclick="goTo('cad-equipamento',this)"><span class="nav-ico">➕</span>Novo Equipamento</div>
+    <div class="sdiv"></div>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="reset-btn" onclick="resetDados()">🗑️ Resetar dados</button>
+    <div class="sync-status" id="syncStatus">Conectando ao Firebase...</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="tb-left">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+      <div>
+        <div class="tb-title" id="pageTitle">Checklist de Equipamentos</div>
+        <div class="tb-sub" id="pageSub">Inspeção diária de equipamentos de movimentação</div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <button class="btn btn-outline" onclick="goTo('capa',null)" style="font-size:11px;">🏠 Início</button>
+      <button class="btn btn-excel" onclick="exportExcel()" style="font-size:11px;">📊 Excel</button>
+      <button class="btn btn-orange" onclick="goTo('novo-checklist',null)" style="font-size:11px;">✅ Novo</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- CAPA -->
+    <div class="page active" id="page-capa">
+      <div class="capa-bg">
+        <div class="capa-card">
+          <div class="capa-icon">🏭</div>
+          <div class="capa-h1">Checklist de Equipamentos</div>
+          <div class="capa-h2">Inspeção diária de equipamentos de movimentação conforme NR-11 e NR-12</div>
+          <div class="capa-equip">
+            <div class="ce"><div class="ce-ico">🏗️</div><div class="ce-lbl">Empilhadeira GLP</div><div class="ce-count" id="cap-glp">0</div></div>
+            <div class="ce"><div class="ce-ico">⚡</div><div class="ce-lbl">Emp. Elétrica</div><div class="ce-count" id="cap-elet">0</div></div>
+            <div class="ce"><div class="ce-ico">🔄</div><div class="ce-lbl">Emp. Retrátil</div><div class="ce-count" id="cap-ret">0</div></div>
+            <div class="ce"><div class="ce-ico">🔋</div><div class="ce-lbl">Paleteira Elét.</div><div class="ce-count" id="cap-pe">0</div></div>
+            <div class="ce"><div class="ce-ico">🔧</div><div class="ce-lbl">Paleteira Man.</div><div class="ce-count" id="cap-pm">0</div></div>
+            <div class="ce"><div class="ce-ico">📋</div><div class="ce-lbl">Checklists hoje</div><div class="ce-count" id="cap-hoje">0</div></div>
+          </div>
+          <button class="capa-btn" onclick="goTo('novo-checklist',null)">✅ Iniciar Inspeção</button>
+          <button class="capa-btn2" onclick="goTo('historico',null)">📋 Ver Histórico</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page" id="page-dashboard">
+      <div id="integBanner"></div>
+      <div class="kpi-grid">
+        <div class="kpi-card blue"><div class="kpi-label">Total equipamentos</div><div class="kpi-value" id="kpi-equip">0</div><div class="kpi-sub">cadastrados</div></div>
+        <div class="kpi-card green"><div class="kpi-label">Operacionais</div><div class="kpi-value" id="kpi-oper">0</div><div class="kpi-sub">aptos para uso</div></div>
+        <div class="kpi-card orange"><div class="kpi-label">Em manutenção</div><div class="kpi-value" id="kpi-manut">0</div><div class="kpi-sub">aguardando reparo</div></div>
+        <div class="kpi-card red"><div class="kpi-label">Inoperantes</div><div class="kpi-value" id="kpi-inop">0</div><div class="kpi-sub">fora de uso</div></div>
+        <div class="kpi-card green"><div class="kpi-label">Checklists hoje</div><div class="kpi-value" id="kpi-hoje">0</div><div class="kpi-sub">inspeções realizadas</div></div>
+        <div class="kpi-card blue"><div class="kpi-label">Total histórico</div><div class="kpi-value" id="kpi-total-hist">0</div><div class="kpi-sub">inspeções registradas</div></div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-title">📋 Últimas inspeções</div>
+          <div id="dashUltimas"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🏭 Equipamentos por tipo</div>
+          <div id="dashPorTipo"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EQUIPAMENTOS -->
+    <div class="page" id="page-equipamentos">
+      <div class="filter-bar">
+        <input class="search-input" type="text" placeholder="🔍 Buscar por patrimônio ou modelo..." oninput="renderEquipamentos()">
+        <select class="filter-select" id="filtTipo" onchange="renderEquipamentos()">
+          <option value="">Todos os tipos</option>
+          <option value="Empilhadeira GLP">Empilhadeira GLP</option>
+          <option value="Empilhadeira Elétrica">Empilhadeira Elétrica</option>
+          <option value="Empilhadeira Retrátil">Empilhadeira Retrátil</option>
+          <option value="Paleteira Elétrica">Paleteira Elétrica</option>
+          <option value="Paleteira Manual">Paleteira Manual</option>
+        </select>
+        <select class="filter-select" id="filtProp" onchange="renderEquipamentos()">
+          <option value="">Próprio / Alugado</option>
+          <option value="Próprio">Próprio</option>
+          <option value="Alugado">Alugado</option>
+        </select>
+        <select class="filter-select" id="filtStat" onchange="renderEquipamentos()">
+          <option value="">Todos os status</option>
+          <option value="Operacional">Operacional</option>
+          <option value="Manutenção">Em Manutenção</option>
+          <option value="Inoperante">Inoperante</option>
+        </select>
+      </div>
+      <div class="equip-grid" id="equipGrid"></div>
+      <div class="empty" id="equipEmpty" style="display:none;"><div class="empty-ico">🏭</div><div class="empty-txt">Nenhum equipamento encontrado</div></div>
+    </div>
+
+    <!-- NOVO CHECKLIST -->
+    <div class="page" id="page-novo-checklist">
+      <!-- PASSO 1: Seleção -->
+      <div id="chkStep1">
+        <div class="card">
+          <div class="card-title">📋 Passo 1 — Identificação da inspeção</div>
+          <div id="integInfoChk" class="integ-banner" style="display:none;"></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Operador *</label>
+              <input class="form-input" type="text" id="chkOperador" placeholder="Nome do operador...">
+              <div id="opSuggestions" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-top:2px;max-height:150px;overflow-y:auto;"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Turno *</label>
+              <select class="form-select" id="chkTurno">
+                <option value="">Selecione...</option>
+                <option>1º Turno</option><option>2º Turno</option><option>3º Turno</option><option>Administrativo</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Equipamento *</label>
+            <select class="form-select" id="chkEquipSel" onchange="onSelectEquip()">
+              <option value="">Selecione o equipamento...</option>
+            </select>
+          </div>
+          <div id="chkEquipInfo" style="display:none;background:var(--green3);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--green4);"></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Data/Hora</label>
+              <input class="form-input" type="datetime-local" id="chkDtHr" readonly>
+            </div>
+            <div class="form-group">
+              <label class="form-label">KM / Horímetro</label>
+              <input class="form-input" type="number" id="chkKm" placeholder="Opcional">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="iniciarChecklist()">▶ Iniciar inspeção</button>
+        </div>
+      </div>
+
+      <!-- PASSO 2: Checklist -->
+      <div id="chkStep2" style="display:none;">
+        <div class="chk-header">
+          <div class="chk-h-title" id="chkHeaderTitle">Inspeção — Empilhadeira GLP</div>
+          <div class="chk-h-sub">Marque cada item como OK, NOK ou N/A</div>
+          <div class="chk-h-info">
+            <div class="chk-info-item"><div class="chk-info-label">Operador</div><div class="chk-info-val" id="chkInfoOp">—</div></div>
+            <div class="chk-info-item"><div class="chk-info-label">Equipamento</div><div class="chk-info-val" id="chkInfoEquip">—</div></div>
+            <div class="chk-info-item"><div class="chk-info-label">Data/Hora</div><div class="chk-info-val" id="chkInfoDt">—</div></div>
+            <div class="chk-info-item"><div class="chk-info-label">Turno</div><div class="chk-info-val" id="chkInfoTurno">—</div></div>
+          </div>
+        </div>
+        <div id="chkItens"></div>
+        <div class="score-geral" id="scoreGeral">
+          <div class="sg-val" id="sgVal">—</div>
+          <div class="sg-label">Score geral da inspeção</div>
+          <div class="sg-status" id="sgStatus">Preencha os itens</div>
+        </div>
+        <div class="card">
+          <div class="card-title">📝 Observações gerais</div>
+          <textarea class="form-input" id="chkObsGeral" rows="3" placeholder="Observações adicionais sobre o equipamento ou a inspeção..." style="resize:vertical;width:100%;"></textarea>
+        </div>
+        <div class="card">
+          <div class="card-title">✍️ Assinatura do operador</div>
+          <div class="sig-label">Assine abaixo para confirmar a inspeção:</div>
+          <canvas class="sig-canvas" id="sigCanvas" width="600" height="120"></canvas>
+          <div class="sig-actions">
+            <button class="btn btn-outline" onclick="clearSig()">🗑️ Limpar assinatura</button>
+            <button class="btn btn-primary btn-full" onclick="finalizarChecklist()">✅ Finalizar inspeção</button>
+          </div>
+        </div>
+        <button class="btn btn-outline" onclick="cancelarChecklist()" style="margin-top:8px;">✕ Cancelar inspeção</button>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="page" id="page-historico">
+      <div class="filter-bar">
+        <input class="search-input" type="text" placeholder="🔍 Buscar por operador ou equipamento..." oninput="renderHistorico()" id="searchHist">
+        <select class="filter-select" id="filtHistTipo" onchange="renderHistorico()">
+          <option value="">Todos os tipos</option>
+          <option value="Empilhadeira GLP">Empilhadeira GLP</option>
+          <option value="Empilhadeira Elétrica">Empilhadeira Elétrica</option>
+          <option value="Empilhadeira Retrátil">Empilhadeira Retrátil</option>
+          <option value="Paleteira Elétrica">Paleteira Elétrica</option>
+          <option value="Paleteira Manual">Paleteira Manual</option>
+        </select>
+        <select class="filter-select" id="filtHistScore" onchange="renderHistorico()">
+          <option value="">Todos os scores</option>
+          <option value="ok">✅ Aprovado (≥80%)</option>
+          <option value="warn">⚠️ Atenção (50-79%)</option>
+          <option value="danger">🔴 Crítico (&lt;50%)</option>
+        </select>
+        <button class="btn btn-excel" onclick="exportExcel()">📊 Excel</button>
+      </div>
+      <div id="histList"></div>
+      <div class="empty" id="histEmpty" style="display:none;"><div class="empty-ico">📋</div><div class="empty-txt">Nenhuma inspeção registrada</div></div>
+    </div>
+
+    <!-- CADASTRO EQUIPAMENTO -->
+    <div class="page" id="page-cad-equipamento">
+      <div class="card" style="max-width:620px;margin:0 auto;">
+        <div class="card-title">🏭 Cadastrar equipamento</div>
+        <input type="hidden" id="eEditId">
+        <div class="form-sec">Identificação</div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Tipo *</label>
+            <select class="form-select" id="eTipo">
+              <option value="">Selecione...</option>
+              <option>Empilhadeira GLP</option>
+              <option>Empilhadeira Elétrica</option>
+              <option>Empilhadeira Retrátil</option>
+              <option>Paleteira Elétrica</option>
+              <option>Paleteira Manual</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Patrimônio / Tag *</label><input class="form-input" type="text" id="ePat" placeholder="Ex: EMP-001, PAL-003"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Marca</label><input class="form-input" type="text" id="eMarca" placeholder="Ex: Toyota, Yale, Clark"></div>
+          <div class="form-group"><label class="form-label">Modelo</label><input class="form-input" type="text" id="eModelo" placeholder="Ex: 8FBE20, GLP-25"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Nº de série</label><input class="form-input" type="text" id="eSerie" placeholder="Número de série"></div>
+          <div class="form-group"><label class="form-label">Capacidade (kg)</label><input class="form-input" type="number" id="eCapac" placeholder="Ex: 1500"></div>
+        </div>
+        <div class="form-sec">Propriedade e Status</div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Propriedade</label>
+            <select class="form-select" id="eProp">
+              <option value="Próprio">Próprio</option>
+              <option value="Alugado">Alugado</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Empresa locadora</label><input class="form-input" type="text" id="eLocadora" placeholder="Se alugado: nome da empresa"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Status</label>
+            <select class="form-select" id="eStat">
+              <option value="Operacional">Operacional</option>
+              <option value="Manutenção">Em Manutenção</option>
+              <option value="Inoperante">Inoperante</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Setor/Local</label><input class="form-input" type="text" id="eSetor" placeholder="Ex: Armazém A, Expedição"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Observações</label><textarea class="form-input" id="eObs" rows="2" placeholder="Observações..." style="resize:vertical;"></textarea></div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="salvarEquipamento()">💾 Salvar equipamento</button>
+          <button class="btn btn-outline" onclick="limparFormEquip()">✕ Limpar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MODAL DETALHE CHECKLIST -->
+<div class="modal-overlay" id="modalChk">
+  <div class="modal" style="max-width:600px;">
+    <button class="modal-close" onclick="document.getElementById('modalChk').classList.remove('open')">✕</button>
+    <div id="modalChkContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══ DADOS ═══ */
+let EQUIPAMENTOS = [];
+let CHECKLISTS = [];
+let OPERADORES_INTEGRADOS = [];
+let chkAtivo = null;
+let chkRespostas = {};
+let opSelecionado = null;
+let sigDrawing = false;
+let sigCtx = null;
+let sigHasDraw = false;
+
+/* ═══ FIREBASE ═══ */
+// Projeto próprio do Checklist
+const firebaseConfig = {
+  apiKey: "AIzaSyC3Al9Gfuwzx2ovoZLd6yHg6279sZyXGgo",
+  authDomain: "checklistequipamentos-dfdcc.firebaseapp.com",
+  databaseURL: "https://checklistequipamentos-dfdcc-default-rtdb.firebaseio.com",
+  projectId: "checklistequipamentos-dfdcc",
+  storageBucket: "checklistequipamentos-dfdcc.firebasestorage.app",
+  messagingSenderId: "119141040492",
+  appId: "1:119141040492:web:3e90a4ca5e053cc114f349"
+};
+// Projeto antigo (PaletCD): só leitura, usado apenas na migração única dos dados
+const legadoConfig = {
+  apiKey: "AIzaSyD9qVsBjf_v59TN8Ayvarts5Q7LXxzlVrQ",
+  authDomain: "paletcd.firebaseapp.com",
+  databaseURL: "https://paletcd-default-rtdb.firebaseio.com",
+  projectId: "paletcd",
+  storageBucket: "paletcd.firebasestorage.app",
+  messagingSenderId: "431517046970",
+  appId: "1:431517046970:web:e03e0ff01e1b898275ca83"
+};
+// Gestão de Operadores (projeto próprio): só leitura, fonte dos operadores e habilitações
+const operadoresConfig = {
+  apiKey: "AIzaSyCaQADZAPMVR8JyK5N8jb0Rp_CsGcCu1Ng",
+  authDomain: "gestaodeoperadores.firebaseapp.com",
+  databaseURL: "https://gestaodeoperadores-default-rtdb.firebaseio.com",
+  projectId: "gestaodeoperadores",
+  storageBucket: "gestaodeoperadores.firebasestorage.app",
+  messagingSenderId: "634148739648",
+  appId: "1:634148739648:web:fa05377347bf177fb11da5"
+};
+firebase.initializeApp(firebaseConfig);
+const appOperadores = firebase.initializeApp(operadoresConfig,'operadores');
+const dbOperadores = appOperadores.database();
+const appLegado = firebase.initializeApp(legadoConfig,'legado');
+const db = firebase.database();
+const dbLegado = appLegado.database();
+const REF_EQ  = db.ref('frota_app/equipamentos');
+const REF_CHK = db.ref('frota_app/checklists');
+const REF_MIG = db.ref('frota_app/_migracao');
+const REF_OP  = dbOperadores.ref('operadores');
+function fbKey(v){return String(v).trim().replace(/[.#$\[\]\/]/g,'_');}
+function setSync(msg){const el=document.getElementById('syncStatus');if(el)el.textContent=msg;}
+function refreshActive(){
+  const p=document.querySelector('.page.active');if(!p)return;
+  const id=p.id.replace('page-','');
+  if(id==='capa')renderCapa();
+  if(id==='dashboard')renderDashboard();
+  if(id==='equipamentos')renderEquipamentos();
+  if(id==='historico')renderHistorico();
+}
+
+/* Migração única: copia equipamentos e checklists do projeto antigo.
+   Só roda se o banco novo ainda não tiver a marca de migração. Não apaga nada do antigo. */
+async function migrarLegado(){
+  try{
+    const flag=await REF_MIG.once('value');
+    if(flag.exists())return;
+    setSync('🔄 Migrando dados do projeto antigo...');
+    const [eq,chk]=await Promise.all([
+      dbLegado.ref('frota_app/equipamentos').once('value'),
+      dbLegado.ref('frota_app/checklists').once('value')
+    ]);
+    const eqV=eq.val()||{}, chkV=chk.val()||{};
+    const ops={};
+    Object.entries(eqV).forEach(([k,v])=>ops['frota_app/equipamentos/'+k]=v);
+    Object.entries(chkV).forEach(([k,v])=>ops['frota_app/checklists/'+k]=v);
+    ops['frota_app/_migracao']={
+      data:new Date().toISOString(),
+      equipamentos:Object.keys(eqV).length,
+      checklists:Object.keys(chkV).length
+    };
+    await db.ref().update(ops);
+    toast('Migração concluída: '+Object.keys(eqV).length+' equipamentos e '+Object.keys(chkV).length+' checklists ✅');
+  }catch(err){
+    console.error('Migração',err);
+    toast('Falha na migração do projeto antigo. Os dados antigos continuam intactos.','error');
+  }
+}
+
+firebase.auth(appLegado).signInAnonymously().catch(()=>console.warn('Auth legado falhou'));
+firebase.auth(appOperadores).signInAnonymously().catch(()=>console.warn('Auth Gestão de Operadores falhou'));
+firebase.auth(appOperadores).onAuthStateChanged(u=>{
+  if(!u)return;
+  REF_OP.on('value',snap=>{
+    OPERADORES_INTEGRADOS=Object.values(snap.val()||{});
+    refreshActive();
+  },()=>console.warn('Sem leitura em gestaodeoperadores/operadores — verifique as rules'));
+});
+
+firebase.auth().signInAnonymously().catch(()=>setSync('⚠️ Erro de autenticação — ative o login Anônimo no projeto'));
+firebase.auth().onAuthStateChanged(async u=>{
+  if(!u)return;
+  if(firebase.auth(appLegado).currentUser===null){
+    await new Promise(r=>{const off=firebase.auth(appLegado).onAuthStateChanged(x=>{if(x){off();r();}});setTimeout(r,5000);});
+  }
+  await migrarLegado();
+  REF_EQ.on('value',snap=>{
+    EQUIPAMENTOS=Object.entries(snap.val()||{}).map(([k,e])=>({key:k,...e}));
+    setSync('☁️ Sincronizado '+new Date().toLocaleTimeString('pt-BR'));
+    refreshActive();
+  },()=>setSync('⚠️ Sem permissão de leitura — verifique as rules'));
+  REF_CHK.on('value',snap=>{
+    CHECKLISTS=Object.entries(snap.val()||{}).map(([k,c])=>({key:k,...c,noks:c.noks||[],respostas:c.respostas||{}}))
+      .sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+    refreshActive();
+  });
+});
+
+/* ═══ CHECKLIST ITENS POR TIPO ═══ */
+const ITENS = {
+  'Empilhadeira GLP':[
+    {sec:'🔥 Motor e Combustível',items:['Nível do óleo do motor','Nível do óleo de câmbio','Nível do óleo hidráulico','Nível da água do radiador','Estado das correias','Filtro de ar','Chave de ignição','Reservatório de GLP / tanque de combustível','Vazamento de combustível ou óleo','Temperatura do motor normal']},
+    {sec:'🛑 Freios',items:['Freio de serviço (pedal)','Freio de estacionamento','Tambores e lonas','Pastilhas de freio']},
+    {sec:'💡 Sistema Elétrico e Luzes',items:['Bateria — carga e conexões','Faróis dianteiros','Luz de freio','Luz de ré','Setas / pisca-alerta','Giroflex / luz de alerta','Buzina','Alarme de ré']},
+    {sec:'🍴 Garfo e Sistema de Elevação',items:['Garfo sem deformação ou rachadura','Trava do garfo funcionando','Mastro sem danos visíveis','Sistema hidráulico sem vazamento','Elevação e descida suaves','Inclinação dianteira e traseira','Encosto de carga (backrest)']},
+    {sec:'🔧 Parte Estrutural e Segurança',items:['Pneus — condição e calibragem','Rodas — sem deformação','Para-choque dianteiro e traseiro','Capota de proteção — ROPS','Cinto de segurança','Extintor de incêndio','Placa de capacidade de carga','Painel — sem código de erro']},
+    {sec:'🦺 EPIs do Operador',items:['Capacete de segurança','Colete refletivo','Calçado de segurança (biqueira)','Luvas (quando aplicável)']},
+  ],
+  'Empilhadeira Elétrica':[
+    {sec:'🔋 Sistema de Bateria',items:['Nível de carga da bateria','Bateria — sem danos ou vazamento','Conexões da bateria firmes','Trava da bateria posicionada','Nível do eletrólito (baterias convencionais)','Carregador — funcionamento']},
+    {sec:'🛑 Freios',items:['Freio de serviço (pedal)','Freio de estacionamento','Freio regenerativo funcionando']},
+    {sec:'💡 Sistema Elétrico e Luzes',items:['Faróis dianteiros','Luz de freio','Luz de ré','Setas / pisca-alerta','Giroflex / luz de alerta','Buzina','Alarme de ré','Painel — sem código de erro']},
+    {sec:'🍴 Garfo e Sistema de Elevação',items:['Garfo sem deformação ou rachadura','Trava do garfo funcionando','Mastro sem danos visíveis','Sistema hidráulico sem vazamento','Elevação e descida suaves','Inclinação dianteira e traseira','Encosto de carga (backrest)']},
+    {sec:'🔧 Parte Estrutural e Segurança',items:['Pneus — condição e calibragem','Rodas — sem deformação','Capota de proteção — ROPS','Cinto de segurança','Extintor de incêndio','Placa de capacidade de carga']},
+    {sec:'🦺 EPIs do Operador',items:['Capacete de segurança','Colete refletivo','Calçado de segurança (biqueira)','Luvas (quando aplicável)']},
+  ],
+  'Empilhadeira Retrátil':[
+    {sec:'🔋 Sistema de Bateria',items:['Nível de carga da bateria','Bateria — sem danos ou vazamento','Conexões da bateria firmes','Trava da bateria posicionada','Carregador — funcionamento']},
+    {sec:'🛑 Freios',items:['Freio de serviço','Freio de estacionamento','Freio regenerativo']},
+    {sec:'💡 Sistema Elétrico e Luzes',items:['Faróis e iluminação','Luz de alerta','Buzina','Alarme de ré','Painel — sem código de erro']},
+    {sec:'🍴 Garfo, Mastro e Retração',items:['Garfo sem deformação','Trava do garfo','Mecanismo de retração — funcionamento','Mastro telescópico — sem danos','Sistema hidráulico sem vazamento','Elevação e descida suaves','Controle lateral (side-shift)']},
+    {sec:'🔧 Estrutural e Segurança',items:['Rodas e pneus','Estrutura do chassi — sem danos','Cinto de segurança','Placa de capacidade de carga','Extintor de incêndio']},
+    {sec:'🦺 EPIs do Operador',items:['Capacete de segurança','Colete refletivo','Calçado de segurança','Luvas (quando aplicável)']},
+  ],
+  'Paleteira Elétrica':[
+    {sec:'🔋 Sistema de Bateria',items:['Nível de carga da bateria','Bateria — sem danos ou vazamento','Conexões da bateria firmes','Carregador — funcionamento']},
+    {sec:'🛑 Freios e Controle',items:['Freio de serviço funcionando','Botão de emergência (dead man)','Acelerador — resposta adequada','Ré — funcionamento']},
+    {sec:'💡 Sistema Elétrico',items:['Buzina','Luz de alerta','Painel — sem código de erro']},
+    {sec:'🍴 Garfo e Elevação',items:['Garfo sem deformação ou rachadura','Sistema hidráulico sem vazamento','Elevação e descida funcionando','Rodas do garfo em bom estado']},
+    {sec:'🔧 Estrutural e Segurança',items:['Rodas de tração — condição','Chassi — sem danos visíveis','Placa de capacidade de carga']},
+    {sec:'🦺 EPIs do Operador',items:['Calçado de segurança (biqueira)','Colete refletivo']},
+  ],
+  'Paleteira Manual':[
+    {sec:'🍴 Garfo e Sistema Hidráulico',items:['Garfo sem deformação ou rachadura','Pistão hidráulico — elevação ok','Sistema hidráulico sem vazamento','Válvula de descida funcionando','Altura máxima de elevação atingida','Bloqueio automático na elevação máxima']},
+    {sec:'🔧 Estrutural e Rodas',items:['Rodas de tração — condição e giro','Rodas do garfo — condição','Timão / manopla — sem dano','Trava de inclinação do timão','Chassi — sem trincas ou deformações']},
+    {sec:'🔩 Manutenção Geral',items:['Lubrificação das articulações','Parafusos e fixações firmes','Limpeza geral do equipamento']},
+    {sec:'🦺 EPIs do Operador',items:['Calçado de segurança (biqueira)','Colete refletivo','Luvas (quando aplicável)']},
+  ],
+};
+
+/* ═══ UTILS ═══ */
+function toast(msg,type='success'){const el=document.getElementById('toast');el.textContent=msg;el.className='toast '+type+' show';setTimeout(()=>el.className='toast',3200);}
+function goTo(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(el)el.classList.add('active');
+  const titles={
+    capa:['Checklist de Equipamentos','Inspeção diária — NR-11 e NR-12'],
+    dashboard:['Dashboard','Visão geral dos equipamentos e inspeções'],
+    equipamentos:['Equipamentos','Lista de equipamentos cadastrados'],
+    'novo-checklist':['Nova Inspeção','Iniciar checklist de equipamento'],
+    historico:['Histórico de Inspeções','Todas as inspeções realizadas'],
+    'cad-equipamento':['Cadastrar Equipamento','Registrar novo equipamento'],
+  };
+  const t=titles[page]||['Checklist',''];
+  document.getElementById('pageTitle').textContent=t[0];
+  document.getElementById('pageSub').textContent=t[1];
+  if(page==='capa')renderCapa();
+  if(page==='dashboard')renderDashboard();
+  if(page==='equipamentos')renderEquipamentos();
+  if(page==='novo-checklist')setupNovoChecklist();
+  if(page==='historico')renderHistorico();
+  document.getElementById('sidebar').classList.remove('open');
+}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
+function tipoClass(tipo){
+  if(tipo.includes('GLP'))return 'glp';
+  if(tipo.includes('Elétrica')&&tipo.includes('Empilhadeira'))return 'eletrica';
+  if(tipo.includes('Retrátil'))return 'retratil';
+  if(tipo.includes('Paleteira Elétrica'))return 'paleteira-e';
+  return 'paleteira-m';
+}
+function tipoIco(tipo){
+  if(tipo.includes('GLP'))return '🏗️';
+  if(tipo.includes('Retrátil'))return '🔄';
+  if(tipo.includes('Elétrica')&&tipo.includes('Empilhadeira'))return '⚡';
+  if(tipo.includes('Paleteira Elétrica'))return '🔋';
+  return '🔧';
+}
+function fmtDt(dt){if(!dt)return'—';const d=new Date(dt);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+function hojeStr(){return new Date().toISOString().slice(0,10);}
+
+/* ═══ CAPA ═══ */
+function renderCapa(){
+  const tipos={'Empilhadeira GLP':'cap-glp','Empilhadeira Elétrica':'cap-elet','Empilhadeira Retrátil':'cap-ret','Paleteira Elétrica':'cap-pe','Paleteira Manual':'cap-pm'};
+  Object.entries(tipos).forEach(([t,id])=>{document.getElementById(id).textContent=EQUIPAMENTOS.filter(e=>e.tipo===t).length;});
+  const hoje=hojeStr();
+  document.getElementById('cap-hoje').textContent=CHECKLISTS.filter(c=>c.data&&c.data.startsWith(hoje)).length;
+}
+
+/* ═══ DASHBOARD ═══ */
+function renderDashboard(){
+  const oper=EQUIPAMENTOS.filter(e=>e.status==='Operacional').length;
+  const manut=EQUIPAMENTOS.filter(e=>e.status==='Manutenção').length;
+  const inop=EQUIPAMENTOS.filter(e=>e.status==='Inoperante').length;
+  const hoje=hojeStr();
+  const hojeCount=CHECKLISTS.filter(c=>c.data&&c.data.startsWith(hoje)).length;
+  document.getElementById('kpi-equip').textContent=EQUIPAMENTOS.length;
+  document.getElementById('kpi-oper').textContent=oper;
+  document.getElementById('kpi-manut').textContent=manut;
+  document.getElementById('kpi-inop').textContent=inop;
+  document.getElementById('kpi-hoje').textContent=hojeCount;
+  document.getElementById('kpi-total-hist').textContent=CHECKLISTS.length;
+
+  // Integração banner
+  const ib=document.getElementById('integBanner');
+  if(OPERADORES_INTEGRADOS.length){ib.innerHTML='<div class="integ-banner connected">✅ Integração ativa — '+OPERADORES_INTEGRADOS.length+' operadores sincronizados via Firebase</div>';}
+  else{ib.innerHTML='<div class="integ-banner">ℹ️ Nenhum operador cadastrado ainda no app de Gestão de Operadores</div>';}
+
+  // Últimas inspeções
+  const ul=document.getElementById('dashUltimas');
+  const ults=CHECKLISTS.slice(-5).reverse();
+  ul.innerHTML=ults.length?ults.map(c=>{const sc=scoreColor(c.score);return`<div class="hist-item" onclick="openChk('${c.key}')"><div class="hist-header"><span class="hist-equip">${c.equipPat} — ${c.equipTipo}</span><span class="hist-score-badge ${sc}">${c.score}%</span></div><div class="hist-detail">${c.operador} • ${fmtDt(c.data)} • ${c.turno}</div></div>`;}).join(''):'<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">Nenhuma inspeção ainda</div></div>';
+
+  // Por tipo
+  const pt=document.getElementById('dashPorTipo');
+  const tipos=['Empilhadeira GLP','Empilhadeira Elétrica','Empilhadeira Retrátil','Paleteira Elétrica','Paleteira Manual'];
+  pt.innerHTML=tipos.map(t=>{const count=EQUIPAMENTOS.filter(e=>e.tipo===t).length;const max=Math.max(...tipos.map(tt=>EQUIPAMENTOS.filter(e=>e.tipo===tt).length),1);return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="font-size:13px;width:14px;text-align:center;">${tipoIco(t)}</div><div style="font-size:11px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t}</div><div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;"><div style="width:${Math.round(count/max*100)}%;height:100%;background:var(--green2);border-radius:4px;"></div></div><div style="font-size:12px;font-weight:700;color:var(--green);min-width:20px;text-align:right;">${count}</div></div>`;}).join('');
+}
+function scoreColor(s){if(s>=80)return'hsb-ok';if(s>=50)return'hsb-warn';return'hsb-danger';}
+
+/* ═══ EQUIPAMENTOS ═══ */
+function renderEquipamentos(){
+  const q=(document.querySelector('#page-equipamentos .search-input')?.value||'').toLowerCase();
+  const tp=document.getElementById('filtTipo').value;
+  const pr=document.getElementById('filtProp').value;
+  const st=document.getElementById('filtStat').value;
+  const dados=EQUIPAMENTOS.filter(e=>{
+    if(q&&!e.pat.toLowerCase().includes(q)&&!e.modelo.toLowerCase().includes(q)&&!e.marca.toLowerCase().includes(q))return false;
+    if(tp&&e.tipo!==tp)return false;
+    if(pr&&e.prop!==pr)return false;
+    if(st&&e.status!==st)return false;
+    return true;
+  });
+  const grid=document.getElementById('equipGrid');
+  const empty=document.getElementById('equipEmpty');
+  if(!dados.length){grid.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  grid.innerHTML=dados.map(e=>`
+    <div class="equip-card ${e.prop.toLowerCase()} ${e.status==='Inoperante'?'inoperante':''}" onclick="editEquip('${e.key}')">
+      <div class="eq-header">
+        <div class="eq-ico ${tipoClass(e.tipo)}">${tipoIco(e.tipo)}</div>
+        <div><div class="eq-name">${e.pat}</div><div class="eq-pat">${e.marca} ${e.modelo}</div></div>
+      </div>
+      <div class="eq-body">
+        <div class="eq-row"><span class="eq-label">Tipo</span><span class="eq-val">${e.tipo}</span></div>
+        <div class="eq-row"><span class="eq-label">Capacidade</span><span class="eq-val">${e.capac?e.capac.toLocaleString('pt-BR')+' kg':'—'}</span></div>
+        <div class="eq-row"><span class="eq-label">Setor</span><span class="eq-val">${e.setor||'—'}</span></div>
+        ${e.prop==='Alugado'?`<div class="eq-row"><span class="eq-label">Locadora</span><span class="eq-val">${e.locadora||'—'}</span></div>`:''}
+      </div>
+      <div class="eq-footer">
+        <span class="eq-status ${e.status==='Operacional'?'es-operacional':e.status==='Manutenção'?'es-manutencao':'es-inoperante'}">${e.status}</span>
+        <span class="eq-type-badge ${e.prop==='Próprio'?'etb-proprio':'etb-alugado'}">${e.prop}</span>
+      </div>
+    </div>`).join('');
+}
+
+/* ═══ NOVO CHECKLIST ═══ */
+function setupNovoChecklist(){
+  document.getElementById('chkStep1').style.display='block';
+  document.getElementById('chkStep2').style.display='none';
+  // Preenche datetime
+  const now=new Date();
+  document.getElementById('chkDtHr').value=now.toISOString().slice(0,16);
+  // Preenche select de equipamentos
+  const sel=document.getElementById('chkEquipSel');
+  sel.innerHTML='<option value="">Selecione o equipamento...</option>'+EQUIPAMENTOS.filter(e=>e.status==='Operacional').map(e=>`<option value="${e.key}">${tipoIco(e.tipo)} ${e.pat} — ${e.tipo} (${e.marca} ${e.modelo})</option>`).join('');
+  // Integração banner
+  const ib=document.getElementById('integInfoChk');
+  if(OPERADORES_INTEGRADOS.length){ib.style.display='flex';ib.className='integ-banner connected';ib.textContent='✅ '+OPERADORES_INTEGRADOS.length+' operadores integrados via Firebase — digite para buscar';}
+  else{ib.style.display='flex';ib.className='integ-banner';ib.textContent='ℹ️ Nenhum operador cadastrado no app de Gestão de Operadores — digite o nome manualmente';}
+  // Autocomplete operador
+  setupOpAutocomplete();
+}
+
+function setupOpAutocomplete(){
+  const inp=document.getElementById('chkOperador');
+  const sug=document.getElementById('opSuggestions');
+  inp.addEventListener('input',()=>{
+    const q=inp.value.toLowerCase();
+    if(!q||q.length<2){sug.style.display='none';return;}
+    const results=OPERADORES_INTEGRADOS.filter(o=>(o.nome||'').toLowerCase().includes(q)||(o.mat||'').includes(q)).slice(0,5);
+    if(!results.length){sug.style.display='none';return;}
+    sug.innerHTML=results.map(o=>`<div onclick="selOp('${fbKey(o.mat)}')" style="padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border);">${o.nome} <span style="color:var(--text3);font-size:10px;">• Mat: ${o.mat} • ${o.equip||''}</span></div>`).join('');
+    sug.style.display='block';
+  });
+  document.addEventListener('click',e=>{if(!e.target.closest('#chkOperador')&&!e.target.closest('#opSuggestions'))sug.style.display='none';});
+}
+function selOp(matKey){
+  opSelecionado=OPERADORES_INTEGRADOS.find(o=>fbKey(o.mat)===matKey)||null;
+  if(opSelecionado)document.getElementById('chkOperador').value=opSelecionado.nome;
+  document.getElementById('opSuggestions').style.display='none';
+}
+
+/* ═══ VALIDAÇÃO NR-11 (modo alerta) ═══ */
+function validarCursoOperador(nomeOp,tipoEquip){
+  const reg=(opSelecionado&&opSelecionado.nome===nomeOp)?opSelecionado
+    :OPERADORES_INTEGRADOS.find(o=>(o.nome||'').toLowerCase()===nomeOp.toLowerCase());
+  if(!reg)return OPERADORES_INTEGRADOS.length?{msg:'Operador não encontrado no cadastro de operadores',reg:null}:{msg:'',reg:null};
+  let msg='';
+  if(reg.equip&&reg.equip!==tipoEquip){
+    msg=`Habilitação cadastrada é para "${reg.equip}", não para "${tipoEquip}"`;
+  }else if(reg.dataVenc){
+    const dias=Math.ceil((new Date(reg.dataVenc+'T00:00:00')-new Date())/86400000);
+    if(dias<0)msg=`Certificado ${reg.curso||'NR-11'} VENCIDO há ${Math.abs(dias)} dia(s)`;
+    else if(dias<=30)msg=`Certificado ${reg.curso||'NR-11'} vence em ${dias} dia(s)`;
+  }
+  return {msg,reg};
+}
+
+function onSelectEquip(){
+  const key=document.getElementById('chkEquipSel').value;
+  const info=document.getElementById('chkEquipInfo');
+  if(!key){info.style.display='none';return;}
+  const e=EQUIPAMENTOS.find(x=>x.key===key);
+  if(!e){info.style.display='none';return;}
+  info.style.display='block';
+  info.innerHTML=`${tipoIco(e.tipo)} <strong>${e.pat}</strong> — ${e.tipo} | ${e.marca} ${e.modelo} | Cap: ${e.capac?e.capac.toLocaleString('pt-BR')+' kg':'—'} | ${e.prop} ${e.locadora?'('+e.locadora+')':''} | Setor: ${e.setor}`;
+}
+
+function iniciarChecklist(){
+  const op=document.getElementById('chkOperador').value.trim();
+  const turno=document.getElementById('chkTurno').value;
+  const equipKey=document.getElementById('chkEquipSel').value;
+  if(!op||!turno||!equipKey){toast('Preencha operador, turno e equipamento!','error');return;}
+  const equip=EQUIPAMENTOS.find(e=>e.key===equipKey);
+  if(!equip){toast('Equipamento não encontrado!','error');return;}
+  const val=validarCursoOperador(op,equip.tipo);
+  if(val.msg)toast('⚠️ '+val.msg+' — inspeção liberada em modo alerta','warning');
+  chkAtivo={op,opMat:val.reg?val.reg.mat:'',alertaCurso:val.msg||'',turno,equip,dt:document.getElementById('chkDtHr').value,km:document.getElementById('chkKm').value};
+  let ab=document.getElementById('chkAlertaCurso');
+  if(!ab){ab=document.createElement('div');ab.id='chkAlertaCurso';ab.style.cssText='display:none;background:var(--orange3);color:#92400e;border:1px solid var(--orange);border-radius:8px;padding:10px 14px;font-size:12px;font-weight:600;margin-bottom:12px;';document.getElementById('chkStep2').prepend(ab);}
+  ab.style.display=val.msg?'block':'none';
+  ab.textContent=val.msg?('⚠️ '+val.msg+' — registrado na inspeção'):'';
+  chkRespostas={};
+  document.getElementById('chkStep1').style.display='none';
+  document.getElementById('chkStep2').style.display='block';
+  document.getElementById('chkHeaderTitle').textContent=`Inspeção — ${equip.tipo}`;
+  document.getElementById('chkInfoOp').textContent=op;
+  document.getElementById('chkInfoEquip').textContent=`${equip.pat} — ${equip.marca} ${equip.modelo}`;
+  document.getElementById('chkInfoDt').textContent=fmtDt(chkAtivo.dt);
+  document.getElementById('chkInfoTurno').textContent=turno;
+  renderItensChecklist(equip.tipo);
+  initSig();
+  window.scrollTo(0,0);
+}
+
+function renderItensChecklist(tipo){
+  const secoes=ITENS[tipo]||ITENS['Paleteira Manual'];
+  const wrap=document.getElementById('chkItens');
+  wrap.innerHTML=secoes.map((sec,si)=>`
+    <div class="chk-section">
+      <div class="chk-sec-title"><span>${sec.sec}</span><span class="chk-score" id="sec-score-${si}">0/${sec.items.length}</span></div>
+      ${sec.items.map((item,ii)=>{
+        const key=`${si}-${ii}`;
+        return`<div class="chk-item" id="item-${key}">
+          <span class="chk-item-nome">${item}</span>
+          <div class="chk-btns">
+            <button class="chk-btn ok" onclick="setResp('${key}','ok',this,${si})" title="OK">✅</button>
+            <button class="chk-btn nok" onclick="setResp('${key}','nok',this,${si})" title="Problema">❌</button>
+            <button class="chk-btn na" onclick="setResp('${key}','na',this,${si})" title="Não se aplica">➖</button>
+          </div>
+          <textarea class="chk-obs" id="obs-${key}" placeholder="Descreva o problema..." rows="2"></textarea>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function setResp(key,resp,btn,secIdx){
+  chkRespostas[key]=resp;
+  // UI
+  const item=document.getElementById('item-'+key);
+  item.querySelectorAll('.chk-btn').forEach(b=>{b.classList.remove('sel');});
+  btn.classList.add('sel');
+  // Mostrar obs se NOK
+  const obs=document.getElementById('obs-'+key);
+  obs.classList.toggle('show',resp==='nok');
+  // Atualizar score da seção
+  updateSecScore(secIdx);
+  updateScoreGeral();
+}
+
+function updateSecScore(si){
+  const secao=ITENS[chkAtivo?.equip?.tipo]?.[si];
+  if(!secao)return;
+  const total=secao.items.length;
+  let ok=0;
+  secao.items.forEach((_,ii)=>{const r=chkRespostas[`${si}-${ii}`];if(r==='ok'||r==='na')ok++;});
+  document.getElementById(`sec-score-${si}`).textContent=`${ok}/${total}`;
+}
+
+function updateScoreGeral(){
+  const tipo=chkAtivo?.equip?.tipo;
+  const secoes=ITENS[tipo]||[];
+  let totalItens=0,okItens=0;
+  secoes.forEach((sec,si)=>{sec.items.forEach((_,ii)=>{totalItens++;const r=chkRespostas[`${si}-${ii}`];if(r==='ok'||r==='na')okItens++;});});
+  const pct=totalItens?Math.round(okItens/totalItens*100):0;
+  const sg=document.getElementById('scoreGeral');
+  const sgv=document.getElementById('sgVal');
+  const sgs=document.getElementById('sgStatus');
+  sgv.textContent=pct+'%';
+  sg.className='score-geral'+(pct<50?' danger':pct<80?' warning':'');
+  sgv.className='sg-val'+(pct<50?' danger':pct<80?' warning':'');
+  sgs.textContent=pct>=80?'✅ Equipamento aprovado para operação':pct>=50?'⚠️ Atenção — verificar itens com problema':'🔴 Equipamento reprovado — não operar';
+}
+
+/* ═══ ASSINATURA ═══ */
+function initSig(){
+  const canvas=document.getElementById('sigCanvas');
+  sigCtx=canvas.getContext('2d');
+  sigCtx.strokeStyle='#1a5a1a';sigCtx.lineWidth=2;sigCtx.lineCap='round';
+  sigHasDraw=false;canvas.classList.remove('signed');
+  // Mouse
+  canvas.addEventListener('mousedown',e=>{sigDrawing=true;sigCtx.beginPath();const r=canvas.getBoundingClientRect();sigCtx.moveTo(e.clientX-r.left,e.clientY-r.top);});
+  canvas.addEventListener('mousemove',e=>{if(!sigDrawing)return;const r=canvas.getBoundingClientRect();sigCtx.lineTo(e.clientX-r.left,e.clientY-r.top);sigCtx.stroke();sigHasDraw=true;canvas.classList.add('signed');});
+  canvas.addEventListener('mouseup',()=>sigDrawing=false);
+  canvas.addEventListener('mouseleave',()=>sigDrawing=false);
+  // Touch
+  canvas.addEventListener('touchstart',e=>{e.preventDefault();sigDrawing=true;sigCtx.beginPath();const r=canvas.getBoundingClientRect();sigCtx.moveTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);},{passive:false});
+  canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!sigDrawing)return;const r=canvas.getBoundingClientRect();sigCtx.lineTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);sigCtx.stroke();sigHasDraw=true;canvas.classList.add('signed');},{passive:false});
+  canvas.addEventListener('touchend',()=>sigDrawing=false);
+}
+function clearSig(){const canvas=document.getElementById('sigCanvas');sigCtx.clearRect(0,0,canvas.width,canvas.height);sigHasDraw=false;canvas.classList.remove('signed');}
+
+/* ═══ FINALIZAR ═══ */
+function finalizarChecklist(){
+  if(!sigHasDraw){toast('Por favor, assine antes de finalizar!','warning');return;}
+  const tipo=chkAtivo.equip.tipo;
+  const secoes=ITENS[tipo]||[];
+  let totalItens=0,okItens=0,noks=[];
+  secoes.forEach((sec,si)=>{
+    sec.items.forEach((item,ii)=>{
+      totalItens++;
+      const r=chkRespostas[`${si}-${ii}`];
+      if(r==='ok'||r==='na')okItens++;
+      if(r==='nok'){
+        const obs=document.getElementById(`obs-${si}-${ii}`)?.value||'';
+        noks.push({sec:sec.sec,item,obs});
+      }
+    });
+  });
+  const score=Math.round(okItens/totalItens*100);
+  const sig=document.getElementById('sigCanvas').toDataURL();
+  const reg={
+    operador:chkAtivo.op,
+    operadorMat:chkAtivo.opMat||'',
+    alertaCurso:chkAtivo.alertaCurso||'',
+    turno:chkAtivo.turno,
+    equipKey:chkAtivo.equip.key,
+    equipPat:chkAtivo.equip.pat,
+    equipTipo:chkAtivo.equip.tipo,
+    equipMarca:chkAtivo.equip.marca,
+    equipModelo:chkAtivo.equip.modelo,
+    data:chkAtivo.dt,
+    km:chkAtivo.km,
+    respostas:{...chkRespostas},
+    noks,
+    obsGeral:document.getElementById('chkObsGeral').value,
+    score,
+    assinatura:sig,
+  };
+  REF_CHK.push(reg)
+    .then(()=>toast(`Inspeção finalizada! Score: ${score}% ${score>=80?'✅':score>=50?'⚠️':'🔴'}`,'success'))
+    .catch(()=>toast('Erro ao salvar no Firebase — verifique a conexão!','error'));
+  cancelarChecklist();
+  goTo('historico',null);
+}
+
+function cancelarChecklist(){
+  chkAtivo=null;chkRespostas={};opSelecionado=null;
+  const ab=document.getElementById('chkAlertaCurso');if(ab)ab.style.display='none';
+  document.getElementById('chkStep1').style.display='block';
+  document.getElementById('chkStep2').style.display='none';
+  document.getElementById('chkOperador').value='';
+  document.getElementById('chkTurno').value='';
+  document.getElementById('chkEquipSel').value='';
+  document.getElementById('chkKm').value='';
+  document.getElementById('chkObsGeral').value='';
+  document.getElementById('chkEquipInfo').style.display='none';
+}
+
+/* ═══ HISTÓRICO ═══ */
+function renderHistorico(){
+  const q=(document.getElementById('searchHist')?.value||'').toLowerCase();
+  const tp=document.getElementById('filtHistTipo').value;
+  const sc=document.getElementById('filtHistScore').value;
+  const dados=CHECKLISTS.filter(c=>{
+    if(q&&!c.operador.toLowerCase().includes(q)&&!c.equipPat.toLowerCase().includes(q))return false;
+    if(tp&&c.equipTipo!==tp)return false;
+    if(sc==='ok'&&c.score<80)return false;
+    if(sc==='warn'&&(c.score<50||c.score>=80))return false;
+    if(sc==='danger'&&c.score>=50)return false;
+    return true;
+  }).reverse();
+  const list=document.getElementById('histList');
+  const empty=document.getElementById('histEmpty');
+  if(!dados.length){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  list.innerHTML=dados.map(c=>`
+    <div class="hist-item" onclick="openChk('${c.key}')">
+      <div class="hist-header">
+        <span class="hist-equip">${tipoIco(c.equipTipo)} ${c.equipPat} — ${c.equipTipo}</span>
+        <span class="hist-score-badge ${scoreColor(c.score)}">${c.score}%</span>
+      </div>
+      <div class="hist-detail" style="display:flex;gap:14px;flex-wrap:wrap;">
+        <span>👷 ${c.operador}</span>
+        <span>🕐 ${fmtDt(c.data)}</span>
+        <span>🔄 ${c.turno}</span>
+        ${c.noks.length?`<span style="color:var(--red);">❌ ${c.noks.length} item${c.noks.length>1?'s':''} NOK</span>`:'<span style="color:var(--green);">✅ Sem NOKs</span>'}
+      </div>
+    </div>`).join('');
+}
+
+function openChk(key){
+  const c=CHECKLISTS.find(x=>x.key===key);
+  if(!c)return;
+  const sc=scoreColor(c.score);
+  document.getElementById('modalChkContent').innerHTML=`
+    <div style="margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:700;">${tipoIco(c.equipTipo)} ${c.equipPat} — ${c.equipTipo}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px;">${c.equipMarca} ${c.equipModelo}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+      <div style="background:var(--bg);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;">Operador</div><div style="font-size:12px;font-weight:600;margin-top:3px;">${c.operador}</div></div>
+      <div style="background:var(--bg);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;">Turno</div><div style="font-size:12px;font-weight:600;margin-top:3px;">${c.turno}</div></div>
+      <div style="background:var(--bg);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;">Data/Hora</div><div style="font-size:12px;font-weight:600;margin-top:3px;">${fmtDt(c.data)}</div></div>
+      <div style="background:var(--bg);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;">Score</div><div style="font-size:18px;font-weight:700;margin-top:1px;color:${c.score>=80?'var(--green)':c.score>=50?'var(--orange2)':'var(--red)'};">${c.score}%</div></div>
+    </div>
+    ${c.alertaCurso?`<div style="background:var(--orange3);border:1px solid var(--orange);border-radius:8px;padding:10px;margin-bottom:12px;font-size:11px;font-weight:600;color:#92400e;">⚠️ ${c.alertaCurso}</div>`:''}
+    ${c.noks.length?`<div style="background:var(--red2);border-radius:8px;padding:12px;margin-bottom:12px;"><div style="font-size:11px;font-weight:700;color:var(--red3);margin-bottom:8px;">❌ Itens com problema (${c.noks.length})</div>${c.noks.map(n=>`<div style="font-size:11px;color:var(--red3);padding:4px 0;border-bottom:1px solid rgba(220,38,38,.15);"><strong>${n.item}</strong>${n.obs?'<br><span style="color:#7f1d1d;">→ '+n.obs+'</span>':''}</div>`).join('')}</div>`:'<div style="background:var(--green3);border-radius:8px;padding:10px;margin-bottom:12px;text-align:center;font-size:12px;font-weight:600;color:var(--green4);">✅ Todos os itens verificados sem problema</div>'}
+    ${c.obsGeral?`<div style="background:var(--bg);border-radius:8px;padding:10px;margin-bottom:12px;"><div style="font-size:10px;color:var(--text3);font-weight:600;">OBSERVAÇÕES GERAIS</div><div style="font-size:12px;margin-top:4px;">${c.obsGeral}</div></div>`:''}
+    ${c.assinatura?`<div style="text-align:center;"><div style="font-size:10px;color:var(--text3);margin-bottom:6px;">ASSINATURA DO OPERADOR</div><img src="${c.assinatura}" style="max-width:100%;border:1px solid var(--border);border-radius:8px;"></div>`:''}`;
+  document.getElementById('modalChk').classList.add('open');
+}
+
+/* ═══ CADASTRO EQUIPAMENTO ═══ */
+function salvarEquipamento(){
+  const tipo=document.getElementById('eTipo').value;
+  const pat=document.getElementById('ePat').value.trim();
+  if(!tipo||!pat){toast('Tipo e patrimônio são obrigatórios!','error');return;}
+  const editKey=document.getElementById('eEditId').value;
+  const key=fbKey(pat);
+  if(!editKey&&EQUIPAMENTOS.some(e=>e.key===key)){toast('Patrimônio já cadastrado!','error');return;}
+  const reg={
+    tipo,pat,
+    marca:document.getElementById('eMarca').value.trim(),
+    modelo:document.getElementById('eModelo').value.trim(),
+    serie:document.getElementById('eSerie').value.trim(),
+    capac:parseInt(document.getElementById('eCapac').value)||0,
+    prop:document.getElementById('eProp').value,
+    locadora:document.getElementById('eLocadora').value.trim(),
+    status:document.getElementById('eStat').value,
+    setor:document.getElementById('eSetor').value.trim(),
+    obs:document.getElementById('eObs').value.trim()
+  };
+  const ops={};
+  ops['frota_app/equipamentos/'+key]=reg;
+  if(editKey&&editKey!==key)ops['frota_app/equipamentos/'+editKey]=null;
+  db.ref().update(ops)
+    .then(()=>{toast(editKey?'Equipamento atualizado! ✅':'Equipamento cadastrado! ✅');limparFormEquip();})
+    .catch(()=>toast('Erro ao salvar no Firebase!','error'));
+}
+function editEquip(key){
+  const e=EQUIPAMENTOS.find(x=>x.key===key);if(!e)return;
+  document.getElementById('eEditId').value=e.key;
+  document.getElementById('eTipo').value=e.tipo;
+  document.getElementById('ePat').value=e.pat;
+  document.getElementById('eMarca').value=e.marca;
+  document.getElementById('eModelo').value=e.modelo;
+  document.getElementById('eSerie').value=e.serie;
+  document.getElementById('eCapac').value=e.capac;
+  document.getElementById('eProp').value=e.prop;
+  document.getElementById('eLocadora').value=e.locadora;
+  document.getElementById('eStat').value=e.status;
+  document.getElementById('eSetor').value=e.setor;
+  document.getElementById('eObs').value=e.obs;
+  goTo('cad-equipamento',null);
+  window.scrollTo(0,0);
+}
+function limparFormEquip(){
+  ['eEditId','ePat','eMarca','eModelo','eSerie','eCapac','eLocadora','eSetor','eObs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('eTipo').value='';
+  document.getElementById('eProp').value='Próprio';
+  document.getElementById('eStat').value='Operacional';
+}
+
+/* ═══ RESET ═══ */
+function resetDados(){
+  if(!confirm('⚠️ Isso vai apagar TODOS os checklists e equipamentos!\n\nDeseja continuar?'))return;
+  if(!confirm('Confirma o reset completo?'))return;
+  REF_CHK.remove()
+    .then(()=>toast('Checklists resetados!','error'))
+    .catch(()=>toast('Erro ao resetar!','error'));
+}
+
+/* ═══ EXPORT EXCEL ═══ */
+function exportExcel(){
+  const wb=XLSX.utils.book_new();
+  // Equipamentos
+  const eRows=[['Tipo','Patrimônio','Marca','Modelo','Série','Cap. (kg)','Propriedade','Locadora','Status','Setor','Obs'],...EQUIPAMENTOS.map(e=>[e.tipo,e.pat,e.marca,e.modelo,e.serie,e.capac,e.prop,e.locadora,e.status,e.setor,e.obs])];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(eRows),'Equipamentos');
+  // Checklists
+  if(CHECKLISTS.length){
+    const cRows=[['Data/Hora','Operador','Turno','Equipamento','Tipo','Marca','Modelo','Score','NOKs','Obs Geral'],...CHECKLISTS.map(c=>[fmtDt(c.data),c.operador,c.turno,c.equipPat,c.equipTipo,c.equipMarca,c.equipModelo,c.score+'%',c.noks.map(n=>n.item).join('; '),c.obsGeral])];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(cRows),'Histórico de Inspeções');
+    // NOKs
+    const nRows=[['Data','Operador','Equipamento','Seção','Item com problema','Observação']];
+    CHECKLISTS.forEach(c=>{c.noks.forEach(n=>nRows.push([fmtDt(c.data),c.operador,c.equipPat,n.sec,n.item,n.obs]));});
+    if(nRows.length>1)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(nRows),'Itens NOK');
+  }
+  XLSX.writeFile(wb,'checklist_equipamentos_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  toast('Excel exportado! 📊');
+}
+
+/* ═══ INIT ═══ */
+renderCapa();
+</script>
+</body>
+</html>
